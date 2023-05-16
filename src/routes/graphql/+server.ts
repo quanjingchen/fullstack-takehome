@@ -13,9 +13,19 @@ const yogaApp = createYoga<RequestEvent>({
 		resolvers: {
 			Query: {
 				// users: (source, args, context, info) => users
-				users:(source, { startId, pageSize }) => {
+				users: (source, { startId, pageSize }) => {
 					const startIndex = startId - 1;
-					return users.slice(startIndex, startIndex + pageSize);
+					const endIndex = startIndex + pageSize;
+					// Get the slice of users to return
+					const usersSlice = users.slice(startIndex, endIndex);
+					// Determine if there are more users available
+					const hasMore = endIndex < users.length;
+					// Return the users and the hasMore field
+					return {
+						users: usersSlice,
+						hasMore
+					};
+
 				}
 			}
 		}

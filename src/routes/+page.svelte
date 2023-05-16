@@ -13,10 +13,13 @@
 	const MY_QUERY = gql`
 		query MyQuery($startId: ID, $pageSize: Int!) {
 			users(startId: $startId, pageSize: $pageSize) {
-				id
-				name
-				avatar
-				email
+				users {
+					id
+					name
+					avatar
+					email
+				}
+				hasMore
 			}
 		}
 	`;
@@ -26,18 +29,19 @@
 
 	let isLoading = false;
 	let users: UserType[] = [];
+	let hasMore = true; // Assume there are more users to load initially
 
 	let scrollContainer: HTMLElement;
 
-	let loadMoreTimeout;
+	let loadMoreTimeout: NodeJS.Timeout;
 
 	function loadMore() {
 		console.log('In loadMore');
-
-		// if (isLoading) return;
-
-		// isLoading = true;
-		console.log(`Is loading 1: ${isLoading}`);
+		// If there are no more users to load, stop the execution of the function
+		if (!hasMore) {
+			console.log('No more users to load');
+			return;
+		}
 		startId = users[users.length - 1] ? Number(users[users.length - 1].id) + 1 : startId;
 		console.log(`Loading more users starting from id: ${startId}`);
 
@@ -48,13 +52,15 @@
 				if (response.error) {
 					console.error(response.error);
 				} else if (response.data && response.data.users) {
-					users = [...users, ...response.data.users];
+					users = [...users, ...response.data.users.users];
+					hasMore = response.data.users.hasMore;
 					console.log('users: ', users);
+					console.log('hasMore: ', hasMore);
 				} else {
 					console.error('Unexpected response format:', response);
 				}
 				isLoading = false;
-				console.log(`Is loading 2: ${isLoading}`);
+				console.log(`Isloading: ${isLoading}`);
 			})
 			.catch((error) => {
 				console.error(error);
@@ -72,6 +78,11 @@
 				// Clear the previous timeout if it exists
 				if (loadMoreTimeout) {
 					clearTimeout(loadMoreTimeout);
+				}
+
+				if (!hasMore) {
+					isLoading = false
+					return
 				}
 
 				isLoading = true; // Set isLoading to true immediately

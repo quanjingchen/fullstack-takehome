@@ -5,8 +5,13 @@ type User {
 	email: String
 }
 
+type UserPage {
+  users: [User!]!
+  hasMore: Boolean!
+}
+
 type Query {
 	#users: [User]
-	users(startId: ID, pageSize: Int!): [User]
+  users(startId: ID, pageSize: Int!): UserPage
 
 }
