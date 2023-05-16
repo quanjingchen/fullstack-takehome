@@ -20,6 +20,7 @@
 					email
 				}
 				hasMore
+				startId
 			}
 		}
 	`;
@@ -33,8 +34,6 @@
 	let loadMoreTimeout: NodeJS.Timeout;
 
 	function loadMore() {
-		console.log('In loadMore');
-		startId = users.length ? Number(users[users.length - 1].id) + 1 : startId;
 		console.log(`Loading more users starting from id: ${startId}`);
 		client
 			.query(getUsers, { startId, pageSize })
@@ -45,8 +44,8 @@
 				} else if (response.data && response.data.usersPage) {
 					users = [...users, ...response.data.usersPage.users];
 					hasMore = response.data.usersPage.hasMore;
-					console.log('users: ', users);
-					console.log('hasMore: ', hasMore);
+					startId = response.data.usersPage.startId;
+					console.log('response.data.usersPage: ', response.data.usersPage);
 				} else {
 					console.error('Unexpected response format:', response);
 				}

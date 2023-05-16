@@ -8,6 +8,7 @@ type User {
 type UsersPage {
   users: [User!]!
   hasMore: Boolean!
+	startId: ID
 }
 
 type Query {
