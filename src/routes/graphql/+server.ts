@@ -13,7 +13,7 @@ const yogaApp = createYoga<RequestEvent>({
 		resolvers: {
 			Query: {
 				// users: (source, args, context, info) => users
-				users: (source, { startId, pageSize }) => {
+				usersPage: (source, { startId, pageSize }) => {
 					const startIndex = startId - 1;
 					const endIndex = startIndex + pageSize;
 					// Get the slice of users to return
@@ -25,7 +25,6 @@ const yogaApp = createYoga<RequestEvent>({
 						users: usersSlice,
 						hasMore
 					};
-
 				}
 			}
 		}

@@ -12,7 +12,7 @@
 
 	const MY_QUERY = gql`
 		query MyQuery($startId: ID, $pageSize: Int!) {
-			users(startId: $startId, pageSize: $pageSize) {
+			usersPage(startId: $startId, pageSize: $pageSize) {
 				users {
 					id
 					name
@@ -26,34 +26,25 @@
 
 	let startId = 1;
 	const pageSize = 10;
-
 	let isLoading = false;
 	let users: UserType[] = [];
 	let hasMore = true; // Assume there are more users to load initially
-
 	let scrollContainer: HTMLElement;
-
 	let loadMoreTimeout: NodeJS.Timeout;
 
 	function loadMore() {
 		console.log('In loadMore');
-		// If there are no more users to load, stop the execution of the function
-		if (!hasMore) {
-			console.log('No more users to load');
-			return;
-		}
-		startId = users[users.length - 1] ? Number(users[users.length - 1].id) + 1 : startId;
+		startId = users.length ? Number(users[users.length - 1].id) + 1 : startId;
 		console.log(`Loading more users starting from id: ${startId}`);
-
 		client
 			.query(MY_QUERY, { startId, pageSize })
 			.toPromise()
 			.then((response) => {
 				if (response.error) {
 					console.error(response.error);
-				} else if (response.data && response.data.users) {
-					users = [...users, ...response.data.users.users];
-					hasMore = response.data.users.hasMore;
+				} else if (response.data && response.data.usersPage) {
+					users = [...users, ...response.data.usersPage.users];
+					hasMore = response.data.usersPage.hasMore;
 					console.log('users: ', users);
 					console.log('hasMore: ', hasMore);
 				} else {
@@ -73,34 +64,28 @@
 			const scrollPosition = scrollContainer.scrollTop + scrollContainer.clientHeight;
 			const scrollHeight = scrollContainer.scrollHeight;
 			const scrollThreshold = 100;
-
 			if (scrollPosition >= scrollHeight - scrollThreshold) {
 				// Clear the previous timeout if it exists
 				if (loadMoreTimeout) {
 					clearTimeout(loadMoreTimeout);
 				}
-
+				// If there are no more users to load, stop the execution of the function
 				if (!hasMore) {
 					isLoading = false
 					return
 				}
-
 				isLoading = true; // Set isLoading to true immediately
-
 				// Set a timeout to delay the loadMore call
 				loadMoreTimeout = setTimeout(() => {
 					loadMore();
 				}, 500); // 500ms delay
 			}
 		}
-
 		scrollContainer.addEventListener('scroll', handleScroll);
-
 		return () => {
 			scrollContainer.removeEventListener('scroll', handleScroll);
 		};
 	});
-
 	// Initial load
 	loadMore();
 </script>
@@ -110,7 +95,6 @@
 		{#each users as user (user.id)}
 			<User {user} />
 		{/each}
-
 		{#if isLoading}
 			<Loader />
 		{/if}

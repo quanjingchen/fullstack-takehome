@@ -12,6 +12,6 @@ type UserPage {
 
 type Query {
 	#users: [User]
-  users(startId: ID, pageSize: Int!): UserPage
+  usersPage(startId: ID, pageSize: Int!): UserPage
 
 }
