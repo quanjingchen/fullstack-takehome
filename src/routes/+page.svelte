@@ -10,8 +10,8 @@
 		exchanges: [cacheExchange, fetchExchange]
 	});
 
-	const MY_QUERY = gql`
-		query MyQuery($startId: ID, $pageSize: Int!) {
+	const getUsers = gql`
+		query($startId: ID, $pageSize: Int!) {
 			usersPage(startId: $startId, pageSize: $pageSize) {
 				users {
 					id
@@ -37,7 +37,7 @@
 		startId = users.length ? Number(users[users.length - 1].id) + 1 : startId;
 		console.log(`Loading more users starting from id: ${startId}`);
 		client
-			.query(MY_QUERY, { startId, pageSize })
+			.query(getUsers, { startId, pageSize })
 			.toPromise()
 			.then((response) => {
 				if (response.error) {
@@ -51,7 +51,6 @@
 					console.error('Unexpected response format:', response);
 				}
 				isLoading = false;
-				console.log(`Isloading: ${isLoading}`);
 			})
 			.catch((error) => {
 				console.error(error);
