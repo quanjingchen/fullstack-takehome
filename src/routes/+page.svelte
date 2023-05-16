@@ -11,7 +11,7 @@
 	});
 
 	const getUsers = gql`
-		query($startId: ID, $pageSize: Int!) {
+		query ($startId: ID, $pageSize: Int!) {
 			usersPage(startId: $startId, pageSize: $pageSize) {
 				users {
 					id
@@ -46,6 +46,10 @@
 					hasMore = response.data.usersPage.hasMore;
 					startId = response.data.usersPage.startId;
 					console.log('response.data.usersPage: ', response.data.usersPage);
+					// If the initial item list doesn't fill the viewport (no scrollbar), just continue loading items until scrolling is enabled.
+					if (scrollContainer.scrollHeight <= window.innerHeight && hasMore) {
+						loadMore();
+					}
 				} else {
 					console.error('Unexpected response format:', response);
 				}
@@ -59,6 +63,8 @@
 
 	onMount(() => {
 		function handleScroll() {
+			// console.log('scrollContainer.scrollHeight ', scrollContainer.scrollHeight)
+			// console.log('window.innerHeight ', window.innerHeight  )
 			const scrollPosition = scrollContainer.scrollTop + scrollContainer.clientHeight;
 			const scrollHeight = scrollContainer.scrollHeight;
 			const scrollThreshold = 100;
@@ -69,8 +75,8 @@
 				}
 				// If there are no more users to load, stop the execution of the function
 				if (!hasMore) {
-					isLoading = false
-					return
+					isLoading = false;
+					return;
 				}
 				isLoading = true; // Set isLoading to true immediately
 				// Set a timeout to delay the loadMore call
@@ -79,7 +85,9 @@
 				}, 500); // 500ms delay
 			}
 		}
+
 		scrollContainer.addEventListener('scroll', handleScroll);
+
 		return () => {
 			scrollContainer.removeEventListener('scroll', handleScroll);
 		};
