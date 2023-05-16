@@ -12,7 +12,11 @@ const yogaApp = createYoga<RequestEvent>({
 		typeDefs: schema,
 		resolvers: {
 			Query: {
-				users: (source, args, context, info) => users
+				// users: (source, args, context, info) => users
+				users:(source, { startId, pageSize }) => {
+					const startIndex = startId - 1;
+					return users.slice(startIndex, startIndex + pageSize);
+				}
 			}
 		}
 	}),

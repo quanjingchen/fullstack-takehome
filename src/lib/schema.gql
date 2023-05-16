@@ -6,5 +6,7 @@ type User {
 }
 
 type Query {
-	users: [User]
+	#users: [User]
+	users(startId: ID, pageSize: Int!): [User]
+
 }

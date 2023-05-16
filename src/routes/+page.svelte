@@ -9,6 +9,7 @@
 		exchanges: [cacheExchange, fetchExchange]
 	});
 
+/*
 	const result = queryStore<{ users: UserType[] }>({
 		client,
 		query: gql`
@@ -22,6 +23,28 @@
 			}
 		`
 	});
+	*/
+
+	const MY_QUERY = gql`
+  	query MyQuery($startId: ID, $pageSize: Int!) {
+    	users(startId: $startId, pageSize: $pageSize) {
+      	id
+      	name
+      	avatar
+      	email
+    	}
+  	}
+	`;
+
+	const result = queryStore<{ users: UserType[] }>({
+		client,
+		query: MY_QUERY,
+		variables: {
+    	startId: '1',
+    	pageSize: 10, // Replace with the desired page size
+  	},
+	});
+
 </script>
 
 <div class="w-full h-full overflow-scroll">
