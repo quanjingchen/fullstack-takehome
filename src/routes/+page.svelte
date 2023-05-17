@@ -43,27 +43,31 @@
 	let hasMore = true; // Assume there are more users to load initially
 	let scrollContainer: HTMLElement;
 	let loadMoreTimeout: NodeJS.Timeout;
+	let isMounted = false;
+	let triggerReloadAfterSearch = false;
 
 	let searchTerm = '';
 	$: if (searchTerm) {
+		triggerReloadAfterSearch = true;
 		isLoading = true;
 		client
 			.query(searchUsers, { query: searchTerm })
 			.toPromise()
 			.then((response) => {
-				if (response.error) {
-					console.error(response.error);
-				} else if (response.data && response.data.searchUsers) {
-					users = response.data.searchUsers;
-				} else {
-					console.error('Unexpected response format:', response);
-				}
+				users = response.data.searchUsers;
 				isLoading = false;
 			})
 			.catch((error) => {
 				console.error(error);
 				isLoading = false;
 			});
+	} else {
+		if (isMounted && triggerReloadAfterSearch) {
+			users = [];
+			startId = 1;
+			loadMore();
+			triggerReloadAfterSearch = false;
+		}
 	}
 
 	function loadMore() {
@@ -74,7 +78,7 @@
 			.then((response) => {
 				if (response.error) {
 					console.error(response.error);
-				} else if (response.data && response.data.usersPage) {
+				} else {
 					users = [...users, ...response.data.usersPage.users];
 					hasMore = response.data.usersPage.hasMore;
 					startId = response.data.usersPage.startId;
@@ -86,8 +90,6 @@
 							loadMore();
 						}
 					}, 0);
-				} else {
-					console.error('Unexpected response format:', response);
 				}
 				isLoading = false;
 			})
@@ -106,13 +108,13 @@
 			if (loadMoreTimeout) {
 				clearTimeout(loadMoreTimeout);
 			}
-			// If there are no more users to load, stop the execution of the function
-			if (!hasMore) {
+			// If there are no more users to load or if it's in search mode, stop the execution of the function
+			if (!hasMore || searchTerm) {
 				isLoading = false;
 				return;
 			}
 			isLoading = true; // Set isLoading to true immediately
-			// Set a timeout to delay the loadMore call
+			// Set a timeout to delay the loadMore call. It is used to visualize the loading spinner, as data fetch is too fast locally
 			loadMoreTimeout = setTimeout(() => {
 				loadMore();
 			}, 500); // 500ms delay
@@ -121,6 +123,7 @@
 
 	onMount(() => {
 		// Initial load
+		isMounted = true;
 		loadMore();
 
 		scrollContainer.addEventListener('scroll', handleScroll);
