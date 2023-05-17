@@ -30,8 +30,8 @@ const yogaApp = createYoga<RequestEvent>({
 					};
 				},
 				searchUsers: (source, { query }) => {
-					// Search logic might be much more complex.
-					return users.filter(user => user.name.includes(query));
+					// Make the search case-insensitive
+					return users.filter(user => user.name.toLowerCase().includes(query.toLowerCase()));
 				}
 			}
 		}

@@ -43,16 +43,33 @@
 	let hasMore = true; // Assume there are more users to load initially
 	let scrollContainer: HTMLElement;
 	let loadMoreTimeout: NodeJS.Timeout;
+	let searchTimeout: NodeJS.Timeout;
 	let isMounted = false;
 	let triggerReloadAfterSearch = false;
 
 	// For client.query method check out https://formidable.com/open-source/urql/docs/basics/core/
 	let searchTerm = '';
-	$: if (searchTerm) {
+	$: {
+		clearTimeout(searchTimeout);
+		searchTimeout = setTimeout(() => {
+			if (searchTerm) {
+				handleSearch(searchTerm);
+			} else {
+				if (isMounted && triggerReloadAfterSearch) {
+					users = [];
+					startId = 1;
+					loadMore();
+					triggerReloadAfterSearch = false;
+				}
+			}
+		}, 500); // 500ms delay
+	}
+
+	function handleSearch(term: String) {
 		triggerReloadAfterSearch = true;
 		isLoading = true;
 		client
-			.query(searchUsers, { query: searchTerm })
+			.query(searchUsers, { query: term })
 			.toPromise()
 			.then((result) => {
 				users = result.data.searchUsers;
@@ -62,13 +79,6 @@
 				console.error(error);
 				isLoading = false;
 			});
-	} else {
-		if (isMounted && triggerReloadAfterSearch) {
-			users = [];
-			startId = 1;
-			loadMore();
-			triggerReloadAfterSearch = false;
-		}
 	}
 
 	function loadMore() {
