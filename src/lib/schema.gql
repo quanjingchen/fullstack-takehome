@@ -8,10 +8,9 @@ type User {
 type UsersPage {
   users: [User!]!
   hasMore: Boolean!
-	startId: ID
 }
 
 type Query {
-  usersPage(startId: ID, pageSize: Int!): UsersPage
+  usersPage(from: Int!, limit: Int!): UsersPage
 	searchUsers(query: String!): [User]
 }
