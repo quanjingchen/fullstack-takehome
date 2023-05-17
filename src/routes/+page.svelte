@@ -25,15 +25,15 @@
 	`;
 
 	const searchUsers = gql`
-    query ($query: String!) {
-      searchUsers(query: $query) {
-        id
-        name
-        avatar
-        email
-      }
-    }
-  `;
+		query ($query: String!) {
+			searchUsers(query: $query) {
+				id
+				name
+				avatar
+				email
+			}
+		}
+	`;
 
 	let limit = 10;
 	let from = 0;
@@ -41,7 +41,7 @@
 	let hasMore = true; // Assume there are more users to load initially
 	let scrollContainer: HTMLElement;
 	let nextPageTimeout: NodeJS.Timeout;
-  let searchTerm = '';
+	let searchTerm = '';
 
 	$: getUserStore = queryStore<{ usersPage: UsersPageType }>({
 		client,
@@ -49,11 +49,18 @@
 		variables: { from, limit }
 	});
 
-	$: searchUsersStore = queryStore<{ users: UserType[] }>({
-   client,
-   query: searchUsers,
-   variables: { query: searchTerm }
-  });
+	$: searchUsersStore = queryStore<{ searchUsers: UserType[] }>({
+		client,
+		query: searchUsers,
+		variables: { query: searchTerm }
+	});
+
+	$: { // Reset the user list and the start index for fetching users when search term is cleared
+		if (searchTerm == "") {
+			console.log('reset UserList')
+			resetUserList();
+		}
+	}
 
 	$: {
 		const userStoreData = $getUserStore.data;
@@ -65,13 +72,23 @@
 	}
 
 	$: {
-   const searchStoreData = $searchUsersStore?.data;
-   if (searchTerm && searchStoreData) {
-     console.log('search results: ', searchStoreData.users);
-     users = searchStoreData.users;
-     hasMore = false;  // stop fetching more users during search
-   }
-  }
+		const searchStoreData = $searchUsersStore?.data;
+		console.log('searchTerm: ', searchTerm);
+		if (searchTerm && searchStoreData) {
+			console.log('search results: ', searchStoreData.searchUsers);
+			users = searchStoreData.searchUsers;
+			hasMore = false; // stop fetching more users during search
+		}
+	}
+	function resetUserList() {
+		from = 0;
+		users = [];
+		getUserStore = queryStore({
+			client,
+			query: getUsers,
+			variables: { from, limit }
+		});
+	}
 
 	function nextPage() {
 		// If there are no more users to load, stop the execution of the function
@@ -82,12 +99,12 @@
 		console.log(`Loading more users starting from id: ${from}`);
 	}
 
-	function checkScroll() {
-		// If the fetch doesn't fill the viewport, it continues fetching until scrolling is enabled.
-		if (scrollContainer.scrollHeight <= scrollContainer.clientHeight && hasMore) {
-			nextPage();
-		}
-	}
+	// function checkScroll() {
+	// 	// If the fetch doesn't fill the viewport, it continues fetching until scrolling is enabled.
+	// 	if (scrollContainer.scrollHeight <= scrollContainer.clientHeight && hasMore) {
+	// 		nextPage();
+	// 	}
+	// }
 
 	function handleScroll() {
 		const scrollPosition = scrollContainer.scrollTop + scrollContainer.clientHeight;
@@ -121,11 +138,11 @@
 <div class="w-full h-full overflow-scroll" bind:this={scrollContainer}>
 	<div class="flex flex-col gap-4 items-center p-4">
 		<input
-		class="w-full px-3 py-2 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-600"
-		type="text"
-		bind:value={searchTerm}
-		placeholder="Search users"
-	/>
+			class="w-full px-3 py-2 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-600"
+			type="text"
+			bind:value={searchTerm}
+			placeholder="Search users"
+		/>
 		{#each users as user (user.id)}
 			<User {user} />
 		{/each}
@@ -134,9 +151,12 @@
 		{/if}
 	</div>
 
-  {#if hasMore}
-    <div class="w-full flex justify-center">
-      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" on:click={nextPage}>Load More</button>
-    </div>
-  {/if}
+	{#if hasMore}
+		<div class="w-full flex justify-center">
+			<button
+				class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+				on:click={nextPage}>Load More</button
+			>
+		</div>
+	{/if}
 </div>
