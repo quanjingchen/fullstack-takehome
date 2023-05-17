@@ -46,6 +46,7 @@
 	let isMounted = false;
 	let triggerReloadAfterSearch = false;
 
+ // for client.query method check out https://formidable.com/open-source/urql/docs/basics/core/
 	let searchTerm = '';
 	$: if (searchTerm) {
 		triggerReloadAfterSearch = true;
@@ -53,8 +54,8 @@
 		client
 			.query(searchUsers, { query: searchTerm })
 			.toPromise()
-			.then((response) => {
-				users = response.data.searchUsers;
+			.then((result) => {
+				users = result.data.searchUsers;
 				isLoading = false;
 			})
 			.catch((error) => {
@@ -75,22 +76,19 @@
 		client
 			.query(getUsers, { startId, pageSize })
 			.toPromise()
-			.then((response) => {
-				if (response.error) {
-					console.error(response.error);
-				} else {
-					users = [...users, ...response.data.usersPage.users];
-					hasMore = response.data.usersPage.hasMore;
-					startId = response.data.usersPage.startId;
-					console.log('response.data.usersPage: ', response.data.usersPage);
-					// If the initial item list doesn't fill the viewport (no scrollbar), just continue loading items until scrolling is enabled.
-					setTimeout(() => {
-						if (scrollContainer.scrollHeight <= scrollContainer.clientHeight && hasMore) {
-							console.log(`initial item list doesn't fill the viewport`);
-							loadMore();
-						}
-					}, 0);
-				}
+			.then((result) => {
+				users = [...users, ...result.data.usersPage.users];
+				hasMore = result.data.usersPage.hasMore;
+				startId = result.data.usersPage.startId;
+				console.log('result.data.usersPage: ', result.data.usersPage);
+				// If the initial item list doesn't fill the viewport (no scrollbar), just continue loading items until scrolling is enabled.
+				setTimeout(() => {
+					if (scrollContainer.scrollHeight <= scrollContainer.clientHeight && hasMore) {
+						console.log(`initial item list doesn't fill the viewport`);
+						loadMore();
+					}
+				}, 0); //Use setTimeout with 0 delay to ensure DOM updates finish before loading more items.
+
 				isLoading = false;
 			})
 			.catch((error) => {
@@ -103,8 +101,9 @@
 		const scrollPosition = scrollContainer.scrollTop + scrollContainer.clientHeight;
 		const scrollHeight = scrollContainer.scrollHeight;
 		const scrollThreshold = 100;
+		// If near the bottom of the scroll container, start loading more items
 		if (scrollPosition >= scrollHeight - scrollThreshold) {
-			// Clear the previous timeout if it exists
+			// Clear the previous timeout if it exists. This can prevent multiple rapid triggers of loadMore
 			if (loadMoreTimeout) {
 				clearTimeout(loadMoreTimeout);
 			}
@@ -125,13 +124,12 @@
 		// Initial load
 		isMounted = true;
 		loadMore();
-
 		scrollContainer.addEventListener('scroll', handleScroll);
-
 		return () => {
 			scrollContainer.removeEventListener('scroll', handleScroll);
 		};
 	});
+
 </script>
 
 <div class="w-full h-full overflow-scroll" bind:this={scrollContainer}>
