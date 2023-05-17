@@ -62,45 +62,39 @@
 		}
 	}
 
-	$: {
-		if (!searchTerm) {
-			console.log('[1] fetch user data');
-			getUserStore = queryStore<{ usersPage: UsersPageType }>({
-				client,
-				query: getUsers,
-				variables: { from, limit }
-			});
-			const userStoreData = $getUserStore.data;
-			console.log('[1] $getUserStore.data: ', userStoreData);
-			if (userStoreData) {
-				users = [...users, ...userStoreData.usersPage.users];
-				console.log('[1] push new users in to users: ', users.length);
-
-				hasMore = userStoreData.usersPage.hasMore;
-			}
+	$: if (!searchTerm) {
+		console.log('[1] fetch user data');
+		getUserStore = queryStore<{ usersPage: UsersPageType }>({
+			client,
+			query: getUsers,
+			variables: { from, limit }
+		});
+		const userStoreData = $getUserStore.data;
+		console.log('[1] $getUserStore.data: ', userStoreData);
+		if (userStoreData) {
+			users = [...users, ...userStoreData.usersPage.users];
+			console.log('[1] push new users in to users: ', users.length);
+			hasMore = userStoreData.usersPage.hasMore;
+			checkScroll();
 		}
 	}
 
 	$: if (searchTerm) {
 		console.log('[2] search user data');
-
 		searchUsersStore = queryStore<{ searchUsers: UserType[] }>({
 			client,
 			query: searchUsers,
 			variables: { query: searchTerm }
 		});
-
 		const searchStoreData = $searchUsersStore?.data;
 		console.log('[2] $searchUsersStore?.data: ', $searchUsersStore?.data);
 
 		if (searchStoreData) {
 			users = searchStoreData.searchUsers;
 			console.log('[2] update users array with search data: ', users);
-			hasMore = false; // stop fetching more users during search
+			hasMore = false; // Stop fetching more users during search
 		}
 	}
-
-
 
 	function resetUserList() {
 		from = 0;
@@ -112,21 +106,25 @@
 		});
 	}
 
-	function nextPage() {
+	async function nextPage() {
 		// If there are no more users to load, stop the execution of the function
-		if (!hasMore) {
-			return;
-		}
+		if (!hasMore) return;
+		// Ensures that changes in 'from' are correctly picked up by Svelte's reactivity system.
+		await new Promise((resolve) => setTimeout(resolve, 0));
 		from = from + limit;
 		console.log(`[4] Loading more users starting from id: ${from}`);
 	}
 
-	// function checkScroll() {
-	// 	// If the fetch doesn't fill the viewport, it continues fetching until scrolling is enabled.
-	// 	if (scrollContainer.scrollHeight <= scrollContainer.clientHeight && hasMore) {
-	// 		nextPage();
-	// 	}
-	// }
+	async function checkScroll() {
+		// Wait for any ongoing asynchronous operations to complete before checking the scroll conditions.
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		// If the fetch doesn't fill the viewport, it continues fetching until scrolling is enabled.
+		console.log(`[5] Check scroll`);
+		if (scrollContainer.scrollHeight <= scrollContainer.clientHeight && hasMore) {
+			console.log(`[5] No scroll found`);
+			nextPage();
+		}
+	}
 
 	function handleScroll() {
 		const scrollPosition = scrollContainer.scrollTop + scrollContainer.clientHeight;
@@ -173,12 +171,9 @@
 		{/if}
 	</div>
 
-	{#if hasMore}
-		<div class="w-full flex justify-center">
-			<button
-				class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-				on:click={nextPage}>Load More</button
-			>
+	{#if !hasMore}
+		<div class="w-full flex justify-center mt-4 text-gray-600">
+			<p class="font-semibold">You've reached the end. There are no more users to display.</p>
 		</div>
 	{/if}
 </div>

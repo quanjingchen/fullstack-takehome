@@ -14,7 +14,6 @@ const yogaApp = createYoga<RequestEvent>({
 			Query: {
 				// users: (source, args, context, info) => users
 				usersPage: (source, { from, limit }) => {
-					// Find the index of the from in the users array
 					const endIndex = from + limit;
 					console.log('startIndex: ', from)
 					// Get the slice of users to return
