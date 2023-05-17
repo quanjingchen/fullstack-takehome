@@ -46,7 +46,7 @@
 	let isMounted = false;
 	let triggerReloadAfterSearch = false;
 
- // for client.query method check out https://formidable.com/open-source/urql/docs/basics/core/
+	// For client.query method check out https://formidable.com/open-source/urql/docs/basics/core/
 	let searchTerm = '';
 	$: if (searchTerm) {
 		triggerReloadAfterSearch = true;
@@ -88,7 +88,6 @@
 						loadMore();
 					}
 				}, 0); //Use setTimeout with 0 delay to ensure DOM updates finish before loading more items.
-
 				isLoading = false;
 			})
 			.catch((error) => {
@@ -129,12 +128,16 @@
 			scrollContainer.removeEventListener('scroll', handleScroll);
 		};
 	});
-
 </script>
 
 <div class="w-full h-full overflow-scroll" bind:this={scrollContainer}>
 	<div class="flex flex-col gap-4 items-center p-4">
-		<input type="text" bind:value={searchTerm} placeholder="Search users" />
+		<input
+			class="w-full px-3 py-2 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-600"
+			type="text"
+			bind:value={searchTerm}
+			placeholder="Search users"
+		/>
 		{#each users as user (user.id)}
 			<User {user} />
 		{/each}
