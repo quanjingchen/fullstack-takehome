@@ -50,9 +50,19 @@
 	let hasMore = true; // Assume there are more users to load initially
 	let scrollContainer: HTMLElement;
 	let nextPageTimeout: NodeJS.Timeout;
+	let searchTimeout: NodeJS.Timeout;
+
+	let rawSearchTerm = '';
 	let searchTerm = '';
 	let getUserStore: OperationResultStore<{ usersPage: UsersPageType }, AnyVariables> & Pausable;
 	let searchUsersStore: OperationResultStore<{ searchUsers: UserType[] }, AnyVariables> & Pausable;
+
+	$: {
+		clearTimeout(searchTimeout);
+		searchTimeout = setTimeout(() => {
+			searchTerm = rawSearchTerm;
+		}, 500);
+	}
 
 	$: {
 		// Reset the user list and the start index for fetching users when search term is cleared
@@ -160,7 +170,7 @@
 		<input
 			class="w-full px-3 py-2 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-600"
 			type="text"
-			bind:value={searchTerm}
+			bind:value={rawSearchTerm}
 			placeholder="Search users"
 		/>
 		{#each users as user (user.id)}
