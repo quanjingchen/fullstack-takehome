@@ -3,6 +3,7 @@
 	import Loader from 'components/Loader.svelte';
 	import User from 'components/User.svelte';
 	import type { UserType, UsersPageType } from 'lib/types';
+	import { onMount } from 'svelte';
 
 	const client = createClient({
 		url: 'http://localhost:5173/graphql',
@@ -24,9 +25,11 @@
 	`;
 
 	let from = 0;
-	let limit = 50;
+	let limit = 10;
 	let users: UserType[] = [];
 	let hasMore = true; // Assume there are more users to load initially
+	let scrollContainer: HTMLElement;
+	let nextPageTimeout: NodeJS.Timeout;
 
 	$: getUserStore = queryStore<{ usersPage: UsersPageType }>({
 		client,
@@ -51,8 +54,39 @@ function nextPage() {
 		console.log(`Loading more users starting from id: ${from}`);
 	}
 
+
+	function handleScroll() {
+		const scrollPosition = scrollContainer.scrollTop + scrollContainer.clientHeight;
+		const scrollHeight = scrollContainer.scrollHeight;
+		const scrollThreshold = 100;
+		// If near the bottom of the scroll container, start loading more items
+		if (scrollPosition >= scrollHeight - scrollThreshold) {
+			// Clear the previous timeout if it exists. This can prevent multiple rapid triggers of loadMore
+			if (nextPageTimeout) {
+				clearTimeout(nextPageTimeout);
+			}
+			// If there are no more users to load or if it's in search mode, stop the execution of the function
+			if (!hasMore) {
+				return;
+			}
+			// Set a timeout to delay the nextPage call to prevent excessive queries
+			nextPageTimeout = setTimeout(() => {
+				nextPage();
+			}, 500); // 500ms delay
+		}
+	}
+
+
+	onMount(() => {
+		// Initial load
+
+		scrollContainer.addEventListener('scroll', handleScroll);
+		return () => {
+			scrollContainer.removeEventListener('scroll', handleScroll);
+		};
+	});
 </script>
-<div class="w-full h-full overflow-scroll">
+<div class="w-full h-full overflow-scroll" bind:this={scrollContainer}>
 	<div class="flex flex-col gap-4 items-center p-4">
 		{#each users as user (user.id)}
 			<User {user} />
@@ -60,7 +94,6 @@ function nextPage() {
 		{#if $getUserStore.fetching}
 			<Loader />
 		{/if}
-
 	</div>
 	<button on:click={nextPage}>Next page<button /></button>
 </div>
