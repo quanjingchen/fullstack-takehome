@@ -3,7 +3,7 @@
 	import Loader from 'components/Loader.svelte';
 	import User from 'components/User.svelte';
 	import type { UserType, UsersPageType } from 'lib/types';
-	import { onMount, afterUpdate } from 'svelte';
+	import { onMount } from 'svelte';
 
 	const client = createClient({
 		url: 'http://localhost:5173/graphql',
@@ -24,18 +24,36 @@
 		}
 	`;
 
-	let from = 0;
+	const searchUsers = gql`
+    query ($query: String!) {
+      searchUsers(query: $query) {
+        id
+        name
+        avatar
+        email
+      }
+    }
+  `;
+
 	let limit = 10;
+	let from = 0;
 	let users: UserType[] = [];
 	let hasMore = true; // Assume there are more users to load initially
 	let scrollContainer: HTMLElement;
 	let nextPageTimeout: NodeJS.Timeout;
+  let searchTerm = '';
 
 	$: getUserStore = queryStore<{ usersPage: UsersPageType }>({
 		client,
 		query: getUsers,
 		variables: { from, limit }
 	});
+
+	$: searchUsersStore = queryStore<{ users: UserType[] }>({
+   client,
+   query: searchUsers,
+   variables: { query: searchTerm }
+  });
 
 	$: {
 		const userStoreData = $getUserStore.data;
@@ -45,6 +63,16 @@
 			hasMore = userStoreData.usersPage.hasMore;
 		}
 	}
+
+	$: {
+   const searchStoreData = $searchUsersStore?.data;
+   if (searchTerm && searchStoreData) {
+     console.log('search results: ', searchStoreData.users);
+     users = searchStoreData.users;
+     hasMore = false;  // stop fetching more users during search
+   }
+  }
+
 	function nextPage() {
 		// If there are no more users to load, stop the execution of the function
 		if (!hasMore) {
@@ -82,11 +110,6 @@
 		}
 	}
 
-	afterUpdate(() => {
-		// Call the `checkScroll` function after each update. This ensures that the list of users always fills the entire viewport.
-		checkScroll();
-	});
-
 	onMount(() => {
 		scrollContainer.addEventListener('scroll', handleScroll);
 		return () => {
@@ -97,6 +120,12 @@
 
 <div class="w-full h-full overflow-scroll" bind:this={scrollContainer}>
 	<div class="flex flex-col gap-4 items-center p-4">
+		<input
+		class="w-full px-3 py-2 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-600"
+		type="text"
+		bind:value={searchTerm}
+		placeholder="Search users"
+	/>
 		{#each users as user (user.id)}
 			<User {user} />
 		{/each}
@@ -104,5 +133,10 @@
 			<Loader />
 		{/if}
 	</div>
-	<button on:click={nextPage}>Next page<button /></button>
+
+  {#if hasMore}
+    <div class="w-full flex justify-center">
+      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" on:click={nextPage}>Load More</button>
+    </div>
+  {/if}
 </div>
