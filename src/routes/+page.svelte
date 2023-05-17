@@ -1,5 +1,14 @@
 <script lang="ts">
-	import { cacheExchange, createClient, fetchExchange, gql, queryStore } from '@urql/svelte';
+	import {
+		cacheExchange,
+		createClient,
+		fetchExchange,
+		gql,
+		queryStore,
+		type AnyVariables,
+		type OperationResultStore,
+		type Pausable
+	} from '@urql/svelte';
 	import Loader from 'components/Loader.svelte';
 	import User from 'components/User.svelte';
 	import type { UserType, UsersPageType } from 'lib/types';
@@ -42,44 +51,57 @@
 	let scrollContainer: HTMLElement;
 	let nextPageTimeout: NodeJS.Timeout;
 	let searchTerm = '';
+	let getUserStore: OperationResultStore<{ usersPage: UsersPageType }, AnyVariables> & Pausable;
+	let searchUsersStore: OperationResultStore<{ searchUsers: UserType[] }, AnyVariables> & Pausable;
 
-	$: getUserStore = queryStore<{ usersPage: UsersPageType }>({
-		client,
-		query: getUsers,
-		variables: { from, limit }
-	});
-
-	$: searchUsersStore = queryStore<{ searchUsers: UserType[] }>({
-		client,
-		query: searchUsers,
-		variables: { query: searchTerm }
-	});
-
-	$: { // Reset the user list and the start index for fetching users when search term is cleared
-		if (searchTerm == "") {
-			console.log('reset UserList')
+	$: {
+		// Reset the user list and the start index for fetching users when search term is cleared
+		if (searchTerm == '') {
+			console.log('[0] reset UserList');
 			resetUserList();
 		}
 	}
 
 	$: {
-		const userStoreData = $getUserStore.data;
-		if (userStoreData) {
-			console.log(userStoreData.usersPage.users);
-			users = [...users, ...userStoreData.usersPage.users];
-			hasMore = userStoreData.usersPage.hasMore;
+		if (!searchTerm) {
+			console.log('[1] fetch user data');
+			getUserStore = queryStore<{ usersPage: UsersPageType }>({
+				client,
+				query: getUsers,
+				variables: { from, limit }
+			});
+			const userStoreData = $getUserStore.data;
+			console.log('[1] $getUserStore.data: ', userStoreData);
+			if (userStoreData) {
+				users = [...users, ...userStoreData.usersPage.users];
+				console.log('[1] push new users in to users: ', users.length);
+
+				hasMore = userStoreData.usersPage.hasMore;
+			}
 		}
 	}
 
-	$: {
+	$: if (searchTerm) {
+		console.log('[2] search user data');
+
+		searchUsersStore = queryStore<{ searchUsers: UserType[] }>({
+			client,
+			query: searchUsers,
+			variables: { query: searchTerm }
+		});
+
 		const searchStoreData = $searchUsersStore?.data;
-		console.log('searchTerm: ', searchTerm);
-		if (searchTerm && searchStoreData) {
-			console.log('search results: ', searchStoreData.searchUsers);
+		console.log('[2] $searchUsersStore?.data: ', $searchUsersStore?.data);
+
+		if (searchStoreData) {
 			users = searchStoreData.searchUsers;
+			console.log('[2] update users array with search data: ', users);
 			hasMore = false; // stop fetching more users during search
 		}
 	}
+
+
+
 	function resetUserList() {
 		from = 0;
 		users = [];
@@ -96,7 +118,7 @@
 			return;
 		}
 		from = from + limit;
-		console.log(`Loading more users starting from id: ${from}`);
+		console.log(`[4] Loading more users starting from id: ${from}`);
 	}
 
 	// function checkScroll() {
