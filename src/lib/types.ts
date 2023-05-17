@@ -4,3 +4,9 @@ export type UserType = {
 	email: string;
 	avatar: string;
 };
+
+export type UsersPageType = {
+  users: [UserType];
+  hasMore: boolean;
+	startId: number;
+}
