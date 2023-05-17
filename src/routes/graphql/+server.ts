@@ -28,6 +28,10 @@ const yogaApp = createYoga<RequestEvent>({
 						hasMore,
 						startId: hasMore ? users[endIndex].id : null
 					};
+				},
+				searchUsers: (source, { query }) => {
+					// Search logic might be much more complex.
+					return users.filter(user => user.name.includes(query));
 				}
 			}
 		}

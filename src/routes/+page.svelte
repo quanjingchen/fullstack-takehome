@@ -25,6 +25,17 @@
 		}
 	`;
 
+	const searchUsers = gql`
+		query ($query: String!) {
+			searchUsers(query: $query) {
+				id
+				name
+				avatar
+				email
+			}
+		}
+	`;
+
 	let startId = 1;
 	const pageSize = 10;
 	let isLoading = false;
@@ -32,6 +43,28 @@
 	let hasMore = true; // Assume there are more users to load initially
 	let scrollContainer: HTMLElement;
 	let loadMoreTimeout: NodeJS.Timeout;
+
+	let searchTerm = '';
+	$: if (searchTerm) {
+		isLoading = true;
+		client
+			.query(searchUsers, { query: searchTerm })
+			.toPromise()
+			.then((response) => {
+				if (response.error) {
+					console.error(response.error);
+				} else if (response.data && response.data.searchUsers) {
+					users = response.data.searchUsers;
+				} else {
+					console.error('Unexpected response format:', response);
+				}
+				isLoading = false;
+			})
+			.catch((error) => {
+				console.error(error);
+				isLoading = false;
+			});
+	}
 
 	function loadMore() {
 		console.log(`Loading more users starting from id: ${startId}`);
@@ -47,9 +80,12 @@
 					startId = response.data.usersPage.startId;
 					console.log('response.data.usersPage: ', response.data.usersPage);
 					// If the initial item list doesn't fill the viewport (no scrollbar), just continue loading items until scrolling is enabled.
-					if (scrollContainer.scrollHeight <= window.innerHeight && hasMore) {
-						loadMore();
-					}
+					setTimeout(() => {
+						if (scrollContainer.scrollHeight <= scrollContainer.clientHeight && hasMore) {
+							console.log(`initial item list doesn't fill the viewport`);
+							loadMore();
+						}
+					}, 0);
 				} else {
 					console.error('Unexpected response format:', response);
 				}
@@ -61,30 +97,31 @@
 			});
 	}
 
-	onMount(() => {
-		function handleScroll() {
-			// console.log('scrollContainer.scrollHeight ', scrollContainer.scrollHeight)
-			// console.log('window.innerHeight ', window.innerHeight  )
-			const scrollPosition = scrollContainer.scrollTop + scrollContainer.clientHeight;
-			const scrollHeight = scrollContainer.scrollHeight;
-			const scrollThreshold = 100;
-			if (scrollPosition >= scrollHeight - scrollThreshold) {
-				// Clear the previous timeout if it exists
-				if (loadMoreTimeout) {
-					clearTimeout(loadMoreTimeout);
-				}
-				// If there are no more users to load, stop the execution of the function
-				if (!hasMore) {
-					isLoading = false;
-					return;
-				}
-				isLoading = true; // Set isLoading to true immediately
-				// Set a timeout to delay the loadMore call
-				loadMoreTimeout = setTimeout(() => {
-					loadMore();
-				}, 500); // 500ms delay
+	function handleScroll() {
+		const scrollPosition = scrollContainer.scrollTop + scrollContainer.clientHeight;
+		const scrollHeight = scrollContainer.scrollHeight;
+		const scrollThreshold = 100;
+		if (scrollPosition >= scrollHeight - scrollThreshold) {
+			// Clear the previous timeout if it exists
+			if (loadMoreTimeout) {
+				clearTimeout(loadMoreTimeout);
 			}
+			// If there are no more users to load, stop the execution of the function
+			if (!hasMore) {
+				isLoading = false;
+				return;
+			}
+			isLoading = true; // Set isLoading to true immediately
+			// Set a timeout to delay the loadMore call
+			loadMoreTimeout = setTimeout(() => {
+				loadMore();
+			}, 500); // 500ms delay
 		}
+	}
+
+	onMount(() => {
+		// Initial load
+		loadMore();
 
 		scrollContainer.addEventListener('scroll', handleScroll);
 
@@ -92,12 +129,11 @@
 			scrollContainer.removeEventListener('scroll', handleScroll);
 		};
 	});
-	// Initial load
-	loadMore();
 </script>
 
 <div class="w-full h-full overflow-scroll" bind:this={scrollContainer}>
 	<div class="flex flex-col gap-4 items-center p-4">
+		<input type="text" bind:value={searchTerm} placeholder="Search users" />
 		{#each users as user (user.id)}
 			<User {user} />
 		{/each}
