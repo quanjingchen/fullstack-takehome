@@ -1,14 +1,5 @@
 <script lang="ts">
-	import {
-		cacheExchange,
-		createClient,
-		fetchExchange,
-		gql,
-		queryStore,
-		type AnyVariables,
-		type OperationResultStore,
-		type Pausable
-	} from '@urql/svelte';
+	import { cacheExchange, createClient, fetchExchange, gql, queryStore, type AnyVariables, type OperationResultStore, type Pausable } from '@urql/svelte';
 	import Loader from 'components/Loader.svelte';
 	import User from 'components/User.svelte';
 	import type { UserType, UsersPageType } from 'lib/types';
@@ -79,7 +70,8 @@
 			query: getUsers,
 			variables: { from, limit }
 		});
-		const userStoreData = $getUserStore.data;
+		const userStoreData = $getUserStore?.data;
+		const userStoreError = $getUserStore?.error;
 		console.log('[1] $getUserStore.data: ', userStoreData);
 		if (userStoreData) {
 			users = [...users, ...userStoreData.usersPage.users];
@@ -87,6 +79,9 @@
 			hasMore = userStoreData.usersPage.hasMore;
 			// Call the checkScroll function to handle any necessary scroll actions
 			checkScroll();
+		} else if (userStoreError) {
+			console.error('[1] error fetching users:', userStoreError);
+			// Additional error handling logic here
 		}
 	}
 
@@ -99,11 +94,15 @@
 			variables: { query: searchTerm }
 		});
 		const searchStoreData = $searchUsersStore?.data;
+		const searchStoreError = $searchUsersStore?.error;
 		console.log('[2] $searchUsersStore?.data: ', searchStoreData);
 		if (searchStoreData) {
 			users = searchStoreData.searchUsers;
 			console.log('[2] update users array with search data: ', users);
 			hasMore = false; // Stop fetching more users during search
+		} else if (searchStoreError) {
+			console.error('[2] error searching users:', searchStoreError);
+			// Additional error handling logic here
 		}
 	}
 
@@ -179,5 +178,5 @@
 	{/if}
 
 	<!-- Empty div with a fixed height of 50px -->
-	<div style="height: 50px;"></div>
+	<div style="height: 50px;" />
 </div>
