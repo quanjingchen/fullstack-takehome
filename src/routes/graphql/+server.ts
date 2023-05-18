@@ -15,12 +15,12 @@ const yogaApp = createYoga<RequestEvent>({
 				// users: (source, args, context, info) => users
 				usersPage: (source, { from, limit }) => {
 					const endIndex = from + limit;
-					console.log('startIndex: ', from)
+					console.log('[SERVER] startIndex: ', from)
 					// Get the slice of users to return
 					const usersSlice = users.slice(from, endIndex);
 					// Determine if there are more users available
 					const hasMore = endIndex < users.length;
-					// Return the users, hasMore and from field
+					// Return the users, hasMore fields
 					return {
 						users: usersSlice,
 						hasMore
@@ -28,7 +28,7 @@ const yogaApp = createYoga<RequestEvent>({
 				},
 				searchUsers: (source, { query }) => {
 					// Make the search case-insensitive
-					console.log('search SERVER: ',  query)
+					console.log('[SERVER] search: ',  query)
 					return users.filter(user => user.name.toLowerCase().includes(query.toLowerCase()));
 				}
 			}

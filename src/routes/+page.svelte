@@ -49,14 +49,14 @@
 	let users: UserType[] = [];
 	let hasMore = true; // Assume there are more users to load initially
 	let scrollContainer: HTMLElement;
-	let nextPageTimeout: NodeJS.Timeout;
-	let searchTimeout: NodeJS.Timeout;
-
 	let rawSearchTerm = '';
 	let searchTerm = '';
+	let nextPageTimeout: NodeJS.Timeout;
+	let searchTimeout: NodeJS.Timeout;
 	let getUserStore: OperationResultStore<{ usersPage: UsersPageType }, AnyVariables> & Pausable;
 	let searchUsersStore: OperationResultStore<{ searchUsers: UserType[] }, AnyVariables> & Pausable;
 
+	// Add debounce functionality to improve search performance'
 	$: {
 		clearTimeout(searchTimeout);
 		searchTimeout = setTimeout(() => {
@@ -64,14 +64,14 @@
 		}, 500);
 	}
 
-	$: {
-		// Reset the user list and the start index for fetching users when search term is cleared
-		if (searchTerm == '') {
-			console.log('[0] reset UserList');
-			resetUserList();
-		}
+	// Reset the user list and the start index for fetching users when search term is cleared
+	$: if (searchTerm == '') {
+		console.log('[0] reset UserList');
+		from = 0;
+		users = [];
 	}
 
+	// If no search term is present, we fetch user data
 	$: if (!searchTerm) {
 		console.log('[1] fetch user data');
 		getUserStore = queryStore<{ usersPage: UsersPageType }>({
@@ -85,10 +85,12 @@
 			users = [...users, ...userStoreData.usersPage.users];
 			console.log('[1] push new users in to users: ', users.length);
 			hasMore = userStoreData.usersPage.hasMore;
+			// Call the checkScroll function to handle any necessary scroll actions
 			checkScroll();
 		}
 	}
 
+	// If a search term is present, we perform a search operation for users
 	$: if (searchTerm) {
 		console.log('[2] search user data');
 		searchUsersStore = queryStore<{ searchUsers: UserType[] }>({
@@ -97,23 +99,12 @@
 			variables: { query: searchTerm }
 		});
 		const searchStoreData = $searchUsersStore?.data;
-		console.log('[2] $searchUsersStore?.data: ', $searchUsersStore?.data);
-
+		console.log('[2] $searchUsersStore?.data: ', searchStoreData);
 		if (searchStoreData) {
 			users = searchStoreData.searchUsers;
 			console.log('[2] update users array with search data: ', users);
 			hasMore = false; // Stop fetching more users during search
 		}
-	}
-
-	function resetUserList() {
-		from = 0;
-		users = [];
-		getUserStore = queryStore({
-			client,
-			query: getUsers,
-			variables: { from, limit }
-		});
 	}
 
 	async function nextPage() {
@@ -186,4 +177,7 @@
 			<p class="font-semibold">You've reached the end. There are no more users to display.</p>
 		</div>
 	{/if}
+
+	<!-- Empty div with a fixed height of 50px -->
+	<div style="height: 50px;"></div>
 </div>
