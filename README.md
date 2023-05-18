@@ -16,4 +16,4 @@ This application implements a lazy-loaded list of users via Svelte and GraphQL, 
 
 6. **Server-side Implementation:** There are two main queries in the schema:
     - `usersPage`: This query is used to fetch a batch of users. It accepts two arguments, `from` and `limit`, to control the range of users fetched. The query returns a list of users and a flag `hasMore` to indicate if more users are available.
-    - `searchUsers`: This query takes a `query` argument and returns all users whose name matches the search query in a case-insensitive manner.
+    - `searchUsers`: This query takes a `searchTerm` argument and returns all users whose name matches the searchTerm in a case-insensitive manner.
