@@ -35,7 +35,7 @@
 		}
 	`;
 
-	let limit = 10;
+	const limit = 10;
 	let from = 0;
 	let users: UserType[] = [];
 	let hasMore = true; // Assume there are more users to load initially
@@ -166,7 +166,7 @@
 		{#each users as user (user.id)}
 			<User {user} />
 		{/each}
-		{#if $getUserStore.fetching}
+		{#if $getUserStore.fetching || $searchUsersStore?.fetching}
 			<Loader />
 		{/if}
 	</div>
