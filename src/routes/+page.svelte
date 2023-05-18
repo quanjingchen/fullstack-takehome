@@ -25,8 +25,8 @@
 	`;
 
 	const searchUsers = gql`
-		query ($query: String!) {
-			searchUsers(query: $query) {
+		query ($searchTerm: String!) {
+			searchUsers(searchTerm: $searchTerm) {
 				id
 				name
 				avatar
@@ -91,7 +91,7 @@
 		searchUsersStore = queryStore<{ searchUsers: UserType[] }>({
 			client,
 			query: searchUsers,
-			variables: { query: searchTerm }
+			variables: { searchTerm }
 		});
 		const searchStoreData = $searchUsersStore?.data;
 		const searchStoreError = $searchUsersStore?.error;

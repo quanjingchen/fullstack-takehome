@@ -26,10 +26,10 @@ const yogaApp = createYoga<RequestEvent>({
 						hasMore
 					};
 				},
-				searchUsers: (source, { query }) => {
+				searchUsers: (source, { searchTerm }) => {
 					// Make the search case-insensitive
-					console.log('[SERVER] search: ',  query)
-					return users.filter(user => user.name.toLowerCase().includes(query.toLowerCase()));
+					console.log('[SERVER] search: ',  searchTerm)
+					return users.filter(user => user.name.toLowerCase().includes(searchTerm.toLowerCase()));
 				}
 			}
 		}

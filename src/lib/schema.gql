@@ -12,5 +12,5 @@ type UsersPage {
 
 type Query {
   usersPage(from: Int!, limit: Int!): UsersPage
-	searchUsers(query: String!): [User]
+	searchUsers(searchTerm: String!): [User]
 }
